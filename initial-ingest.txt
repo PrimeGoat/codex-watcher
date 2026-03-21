@@ -1,0 +1,252 @@
+# codex-watcher Bootstrap Ingestion
+
+## What This Project Is
+`codex-watcher` is a Codex API filter/proxy runtime.
+
+It exists to sit in front of Codex's normal API usage, remain transparent where possible, and make Codex more robust for project-oriented work by adding structured interception, modular background behavior, stronger project awareness, and controlled observability.
+
+This project came out of ChaiChat design work, where it became clear that the real solution to several Codex limitations was not just better prompting, but a separate runtime layer that can intercept, log, analyze, and selectively augment Codex traffic.
+
+This project is not ChaiChat itself. It is a general Codex-facing support system intended to improve how Codex is used across projects.
+
+## Why It Exists
+The purpose of this project is to improve Codex as a working system by adding capabilities that should not depend entirely on Codex's native foreground session context.
+
+The system should make Codex more robust for project work by enabling:
+- transparent API interception through `config.toml` + proxy routing
+- structured request/response logging
+- externalized project/context awareness
+- modular background processing
+- watcher/meta analysis outside the main foreground lane
+- controllable visible activity streaming
+- a cleaner separation between transcript history and truth-state
+
+## Core System Parts
+This project includes the following core components:
+
+- `filter` / `proxy`
+  - the main interception and routing runtime
+  - handles each Codex API request by coordinating internal components, emitting observable events to Codex when needed, forwarding the original or adjusted request upstream, and returning the upstream response to Codex in either streamed or non-streamed form
+
+- `watcher`
+  - a subsystem of the filter
+  - analyzes requests and may produce meta outputs, routing guidance, module invocations, warnings, or other sidecar decisions
+
+- `orchestrator`
+  - the request-scoped controller inside the filter
+  - creates request context, initializes the stream sink, invokes the watcher, manages blocking vs queued work, forwards upstream calls, and tears down the request cleanly
+
+- `stream sink`
+  - the request-scoped serialized output channel for visible activity and forwarded streamed events
+  - modules emit structured events through it rather than writing raw transport output themselves
+
+- `modules`
+  - pluggable subsystems invoked by the filter
+  - each module can declare whether it is blocking or queued
+  - methods 19 and 20 from ContextOS are intended to become later modules, but the module system must support them generically from the beginning
+
+## Settled Decisions
+The following decisions are already settled and should be treated as project bootstrap truth unless explicitly superseded later.
+
+- This is meant to change how Codex is used in general, not only for one repo.
+- The interception path is `config.toml` + proxy.
+- The system should be passthrough-first.
+- The watcher should exist from the start, but v1 watcher behavior can be simple passthrough-compatible behavior that leaves room for later expansion.
+- The proxy is the filter; the watcher is a subsystem of that filter.
+- The control flow should be synchronous/blocking where needed.
+- The communications/visible event path should be asynchronous.
+- The orchestrator should create a request-scoped stream sink, pass an emitter handle into the watcher, then call the watcher synchronously.
+- The watcher may emit visible events while running, but returns a separate result payload used by the orchestrator for control flow.
+- Modules must not write raw protocol frames directly to the transport; they emit structured events through the sink.
+- Blocking is determined by dependency:
+  - if the filter output depends on a module's result, that module is blocking
+  - otherwise it should be queued or handled asynchronously
+- Logging is non-blocking.
+- Journal updates are non-blocking and queued/flocked.
+- The proxy process stays alive globally; each request-scoped orchestration flow drains, closes, and tears down its own resources cleanly.
+- The system should support Responses API and current protocol surfaces; Responses-only is not a problem.
+- Streaming is required.
+- Local HTTP is fine for initial implementation; local TLS is unnecessary.
+- The external surface should be OpenAI-compatible first.
+- A future ChaiChat-native or project-native admin/control API may be useful later, but is not part of the first surface.
+- Background LLM lanes should, by default, inherit the forwarded provider behavior, but recursion must be prevented.
+- Fortified-process-like behavior should live in the filter/runtime, not as a Codex-visible concept.
+- Codex local history should be treated as the session log of what was said and what happened.
+- The database should store truth/state.
+- Raw transcript logging should exist first, with DB-update connectors designed modularly so components remain self-contained.
+- Method 19 and method 20 are phase-2 features, but the architecture must support pluggable modules from the start.
+
+## Execution Model
+The intended execution model is:
+
+1. the proxy receives a Codex-facing request
+2. the orchestrator creates request context
+3. the orchestrator creates a request-scoped stream sink
+4. the orchestrator invokes the watcher synchronously
+5. the watcher may emit structured visible events through the sink while running
+6. the watcher returns its result payload
+7. the orchestrator uses that result to decide what blocking work must happen before forwarding
+8. queued/non-blocking work is enqueued
+9. the upstream call is forwarded as needed
+10. upstream streamed output may also be forwarded through the sink
+11. the request completes
+12. the request-scoped sink drains and closes cleanly
+13. the request context is torn down
+14. the proxy remains alive for the next request
+
+## Blocking vs Queued Work
+The project uses dependency-based blocking.
+
+A thing is blocking only if the filter output depends on it.
+
+Examples of non-blocking work:
+- raw transcript logging
+- journal updates
+- metrics/event logging
+- post-turn summarization
+- non-essential state updates
+- topic-tree updates that do not affect the current request
+
+Examples of blocking work:
+- request routing decisions that affect forwarding
+- context injection needed before forwarding
+- watcher/model analysis whose result changes the outgoing request
+- safety/policy behavior that must resolve before forwarding
+
+Examples of conditional work:
+- watcher analysis can be non-blocking if it only emits sidecar metadata
+- watcher analysis becomes blocking if its result changes routing, prompt shaping, or required context
+
+## Streaming and Observability
+The system must support visible streamed activity.
+
+It should be able to expose:
+- the filter's own visible activity
+- forwarded streamed output from the primary upstream API call
+- optionally, streamed thinking/tool/activity from the watcher's own API call when the watcher explicitly requests that visibility
+
+This means the system has an observability plane separate from its control plane.
+
+The filter should be able to emit visible events such as:
+- request received
+- watcher running
+- routing decision in progress
+- logging complete
+- queued job created
+- upstream stream started
+- upstream tool activity
+- watcher-requested visible analysis/tool activity
+
+Visibility must be structured and controlled. Internal behavior is not automatically user-visible. Modules must be able to request visible output without directly owning the transport.
+
+## Storage Model
+The intended storage split is:
+
+- Codex local history
+  - session log
+  - what was said
+  - what happened
+
+- database truth/state
+  - structured truth-oriented project/runtime state
+  - not merely transcript dumping
+
+This project is expected to use SurrealDB as the likely database substrate for truth/state and other structured runtime data.
+
+The system should keep transcript logging and truth-state storage conceptually separate, even if both are written during a request.
+
+## Provider and Recursion Model
+The system should forward to OpenAI directly first, but support future provider/routing flexibility.
+
+Background LLM lanes should default to using the same provider behavior as the forwarded call, but must not recursively pass back through the filter in a way that creates stack growth or infinite recursion.
+
+The exact recursion-prevention mechanism remains to be finalized and is one of the required design tasks.
+
+## Tooling Exposure
+Tool exposure is not fully decided yet.
+
+It is under consideration that the filter may expose an MCP surface back to Codex for direct interaction where needed. Because multiple LLM calls may exist in one request path, tool visibility must be designed explicitly rather than assumed.
+
+This is unresolved and must be handled as a required task.
+
+## Information Model Doctrine
+The project should adopt the following rule set for awareness and placement:
+
+- Necessary project knowledge comes from the repo's authoritative project-information surfaces, not from chat alone.
+- Before project-relevant reasoning or action, load the necessary authoritative context for the current matter unless the current context already reflects that knowledge with sufficient accuracy after authoritative loading and any subsequent authoritative adjustments.
+- Commander's explicit current-session directives and decisions are authoritative immediately and override previously recorded state.
+- Store project information in the kind of surface where future lookup will actually look for that kind of information.
+- `project_state` is the compact machine-readable aggregate of current project truth, not a dump of full docs, architecture, or chat history.
+
+## Required Tasks To Create In The New Project
+The new project must create its own task set during initialization from the following required items.
+
+1. Define initial Codex-watcher integration path
+- resolve whether first implementation validation should target stock Codex app through `config.toml`, CLI/SDK flows, or both
+
+2. Specify watcher-filter contract and module execution model
+- formalize the filter, watcher, orchestrator, sink, module, blocking/queued, and teardown model
+
+3. Define transcript log vs truth-state storage model
+- formalize the split between Codex history/session log and DB truth/state
+
+4. Define streaming capture modes per module
+- determine when modules need full chunk/event capture versus final-output capture
+
+5. Define provider inheritance and recursion prevention for background lanes
+- formalize default provider inheritance and the anti-recursion strategy
+
+6. Design pluggable module interface for future ContextOS features
+- define the generic module system that later phase-2 modules will plug into
+
+7. Externalize fortified processes into filter runtime
+- define how filter-owned background/process behavior replaces Codex-visible process knowledge
+
+8. Research Codex native subagents versus ordinary LLM lane calls
+- determine how native subagents differ functionally and whether they matter here
+
+9. Define project-local config backup/reference strategy
+- decide where project-local config references/backups should live without prematurely activating them
+
+10. Explore metadata contract from Codex to proxy
+- determine what headers/query params/config-driven metadata should be passed to the proxy and why
+
+11. Propose future admin/control API surface
+- define what a later non-OpenAI-native control API could do and why it would be useful
+
+12. Decide tool exposure for foreground, watcher, and background lanes
+- determine which tools each lane can see and use, and whether the filter should expose MCP back to Codex
+
+13. Design streamed filter observability and watcher-output visibility
+- define visible event types, forwarding rules, watcher-controlled visibility flags, and how filter activity differs from upstream activity in the user-visible stream
+
+## Task Dependency Rule
+The project must treat the above tasks as prerequisite design work for the initial export-ready architecture state.
+
+The system should not proceed to full implementation as if these design surfaces were already fully settled.
+
+## First Deliverables
+The first deliverables should be:
+- architecture spec
+- contract spec
+- initial filter/watcher/runtime design
+- storage model
+- streaming/observability model
+- provider recursion strategy
+- task set and dependency structure
+
+Not:
+- premature full implementation
+- management initialization from the exporting project
+- overbuilt event-system architecture before it is earned
+
+## Initialization Instructions For The New Project
+At the beginning of the new project's first real session:
+
+1. initialize the new project's own management system
+2. ingest this document into the new project's own canonical surfaces
+3. create the required task set in the new project's own namespace/system
+4. reflect settled decisions into the new project's own project state and repo-local docs
+5. continue from the resulting initialized state
+
+This document is a bootstrap ingestion artifact. After its contents have been correctly projected into the new project's own canonical surfaces, it may become optional or be removed.
