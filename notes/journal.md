@@ -47,3 +47,8 @@ Historical trace of meaningful project-state changes. This is not a source of tr
 - Why it mattered: The SOP is internal operating doctrine rather than public product documentation, so it should not be part of the published repository surface.
 - Immediate consequence: The public repo is further narrowed to product-facing artifacts, while local startup and operational doctrine remain available outside version control.
 
+## 2026-03-22T16:18:03Z
+- Changed: Replaced the earlier narrow ambiguity rule in `AI.md` with a stricter rule: ambiguous language is never permission for any non-read-only action unless Commander explicitly and unambiguously authorizes both the target surface and the specific mutating step.
+- Why it mattered: The safety failure was broader than deletion; any ambiguous request about a non-read-only action can spill into the wrong target or wrong mutation if the action surface is inferred instead of explicitly authorized.
+- Immediate consequence: Future ambiguous requests now require clarification before any non-read-only action of any kind can run.
+
