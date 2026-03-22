@@ -46,9 +46,10 @@
 - Before project-relevant reasoning or action, load the necessary authoritative context for the current matter unless the current context already reflects that knowledge with sufficient accuracy after authoritative loading and any subsequent authoritative adjustments.
 - Commander's explicit current-session directives and decisions are authoritative immediately and override previously recorded state.
 - Store project information in the kind of surface where future lookup will actually look for that kind of information.
+- Atlas knowledge should remain compact and lookup-friendly; when a fuller canonical repo document exists, the Atlas knowledge entry should reference the source file path rather than standing alone as an untraceable summary.
 - `project_state` is the compact machine-readable aggregate of current project truth, not a dump of full docs, architecture, or chat history.
 
 ### Commander's input ###
 - Never assume authority to perform actions unless told to.  If told do, perform actions that are required.  Only confirm if implicit actions are more drastic than explicitly-commanded ones.
+- Work is step-by-step by default: discuss first, do not jump to conclusions, and perform no actions until Commander gives explicit go-ahead after discussion.
 - Upon first load, back up AI.md as AI.original if not yet done so, then writes to AI.md will be permitted.
-
