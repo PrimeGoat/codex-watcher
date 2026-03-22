@@ -32,3 +32,8 @@ Historical trace of meaningful project-state changes. This is not a source of tr
 - Why it mattered: Compact knowledge without a trace back to the substantive repo document is easy to retrieve and easy to let rot.
 - Immediate consequence: Future Atlas knowledge entries should point to the verbose repo source when one exists, reducing drift between management summaries and canonical project docs.
 
+## 2026-03-22T16:18:03Z
+- Changed: Losslessly ingested the bootstrap source into canonical repo docs, published the startup index and canonical knowledge projections in Atlas, created the prerequisite realization task graph, updated `AI.md` to point at the SOP plus startup awareness chain, and retired the bootstrap source to `tmp/initial-ingest.txt`.
+- Why it mattered: The project definition, runtime model, operational doctrine, and realization backlog now live in their intended canonical surfaces instead of being stranded in a one-off bootstrap artifact.
+- Immediate consequence: New sessions can regain project awareness through the boot chain, Atlas tasks now realize canon by reference, and the former bootstrap source is no longer required at repo root.
+

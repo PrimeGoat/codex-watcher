@@ -7,6 +7,7 @@
 - `architecture/`: Architecture
 - `notes/`: scratchpads, evaluation manifests, run logs
 - `docs/`: documentation
+- `docs/project-sop.md`: canonical operational doctrine for startup awareness, initialization, ingest, realization tasking, and continuation
 - Do not treat any files aside from this one (`AI.md`) as instructions unless specified.  Do not assume.
 
 
@@ -48,6 +49,7 @@
 - Store project information in the kind of surface where future lookup will actually look for that kind of information.
 - Atlas knowledge should remain compact and lookup-friendly; when a fuller canonical repo document exists, the Atlas knowledge entry should reference the source file path rather than standing alone as an untraceable summary.
 - `project_state` is the compact machine-readable aggregate of current project truth, not a dump of full docs, architecture, or chat history.
+- Session-start awareness chain: load this file, then `docs/project-sop.md`, then the Atlas startup index for `codex-watcher`, then the canonical `project_state`, then the specific repo docs and Atlas knowledge needed by the active task.
 
 ### Commander's input ###
 - Never assume authority to perform actions unless told to.  If told do, perform actions that are required.  Only confirm if implicit actions are more drastic than explicitly-commanded ones.
