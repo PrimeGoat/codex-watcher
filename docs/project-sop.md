@@ -9,12 +9,12 @@ This document is the canonical operational doctrine for ingest, initialization, 
 At session start, load awareness in this order:
 
 1. `AGENTS.md`
-2. `AI.md`
+2. local `AI.md` (gitignored from the published repo)
 3. Atlas startup index knowledge entry
 4. canonical `project_state`
 5. the specific canonical repo docs and Atlas knowledge needed by the active task
 
-`AI.md` stays brief and points to this SOP, the Atlas startup index, and `project_state`.
+Local `AI.md` stays brief and points to this SOP, the Atlas startup index, and `project_state`.
 
 ## Canonical Surface Routing
 

@@ -37,3 +37,8 @@ Historical trace of meaningful project-state changes. This is not a source of tr
 - Why it mattered: The project definition, runtime model, operational doctrine, and realization backlog now live in their intended canonical surfaces instead of being stranded in a one-off bootstrap artifact.
 - Immediate consequence: New sessions can regain project awareness through the boot chain, Atlas tasks now realize canon by reference, and the former bootstrap source is no longer required at repo root.
 
+## 2026-03-22T16:18:03Z
+- Changed: Removed `AI.md`, `AI.original`, and `FORTIFIED-PROCESSES.md` from the tracked repo surface by adding them to `.gitignore` and untracking them, while keeping them local-only for operator use.
+- Why it mattered: Those files are internal agent/governance scaffolding rather than publish-worthy project artifacts, so they should not ship to GitHub as part of the public repo surface.
+- Immediate consequence: The published repo now centers source plus canonical project docs, while local operator guidance remains available outside version control.
+
