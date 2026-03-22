@@ -42,3 +42,8 @@ Historical trace of meaningful project-state changes. This is not a source of tr
 - Why it mattered: Those files are internal agent/governance scaffolding rather than publish-worthy project artifacts, so they should not ship to GitHub as part of the public repo surface.
 - Immediate consequence: The published repo now centers source plus canonical project docs, while local operator guidance remains available outside version control.
 
+## 2026-03-22T16:18:03Z
+- Changed: Removed `docs/project-sop.md` from the tracked repo surface by adding it to `.gitignore` and untracking it, while keeping it local-only for operational use.
+- Why it mattered: The SOP is internal operating doctrine rather than public product documentation, so it should not be part of the published repository surface.
+- Immediate consequence: The public repo is further narrowed to product-facing artifacts, while local startup and operational doctrine remain available outside version control.
+
